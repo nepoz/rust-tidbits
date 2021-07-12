@@ -1,0 +1,328 @@
+Tuples:
+- immutable
+- access indices using . eg: let tup = (4, 23, 2), then tup.1 = 23
+- Can destructure tuples:
+  let tup(String, i32, i32) = ("Hi", 32, -12);
+  let (message, x, y) = tup
+
+Arrays:
+- immutable
+- all elements MUST be of same type (unlike tuple)
+- can declare type/size: let x: [i32; 3] = (3, 123, 4);
+- can declare all values to be same: let y: [3;5] produces array of length 5 where all elements will be 3.
+- Access elements the usual square brackets way
+- Invalid index results in RUNTIME error, not compile so be careful!
+
+Functions:
+- Keyword to start def is fn. Since Rust is compiled, function order doesn't matter and {} needed.
+- Parameter types MUST be declared for functions
+- Statements perform some action, but have no return value (eg let)
+  - Different from languages like C where x=y=3 is valid because assignment will return the value that was assigned.
+- Expressions RETURN things. THERE IS NO ; AT THE END OF AN EXPRESSION
+
+Control flow:
+- if statements similar to java
+- no truthy/falsy values: we NEED a boolean for if
+- NOTE: match is an alternative, we have already used this with enums.
+- if/else are EXPRESSIONS, so we can use in let, but return of each arm must be the same.
+
+- three types of loops: loop (infinite), while, and for.
+- can return a value alongside break keyword
+- while loop functions as in other languages.
+- use for loop for collections for tighter and more readable code.
+
+Ownership:
+1. Each value has a variable that is its OWNER
+2. There can only be one owner at a time
+3. When the owner goes out of scope, VALUE IS DROPPED
+
+-- Values for which we can determine size at compile time on stack, others on heap. Think of string literal vs variable length String.
+
+-- move problem: In Rust, heap is freed when its owning variable goes out of scope. When we say define an object that will be in the heap as s1 and set s2=s1, other languages would consider s2 a shallow copy and both objects would be usable. However, in Rust, this would cause a double free error when both variables go out of scope, as it will attempt to free the heap for s1 AND s2. So, if we do an assignment like s2=s1, we perform a MOVE and s1 is actually no longer valid; this means that ONE object can only have ONE owner in a scope.
+
+-- To avoid the move problem, we can copy heap data with s1.clone(). (Expensive, we could be copying a large object at runtime)
+
+-- Things like integer and floats that have a fixed length are stored in the stack and have the Copy property. Here, we can copy memory just fine as it is known and not arbitrary. Something implementing Copy cannot implement Drop (which interacts with heap).
+
+- Passing a variable to a function MOVES it. IMPLICATION: if we pass a heap object to a method, we can no longer use it after because the pointer is now owned my method and it'll handle freeing the backing memory.
+-- BUT: returning a value also moves ownership! can preserve variable by having it be in the value returned.
+
+- A better solution is to define a function to use a reference (&) instead. The parameter will have a reference but WONT OWN what it's referring to, so the variable is still usable in the scope that called the function.
+  -- This concept is known as BORROWING
+
+- Like variables, references are immutable by default.
+  -- Can only have one mutable reference to a variable in scope. Can use {} to create new scopes as needed.
+  -- This is to avoid data race; there's no sync between data if both can be writing/reading at any time.
+
+- We cannot have a mutable and immutable reference in the same scope either; an immutable reference will not be expecting the data it's pointing to to change.
+
+- A reference's scope is from where it is defined to its last use.
+- References will never be dangling because Rust ensures references go out of scope before owning variable.
+
+- Slicing is another way to use borrowing instead of moving.
+- Doing so creates immutable references, so we can avoid problems if the backing data mutates (we get compiler error).
+- Slice syntax is &s[start..end + 1]
+- Slices use type &str which are pointers to specific points in a string with specified length.
+- String literals use slices and that's why they CANNOT be declared as mut; they specifically use an immutable reference.
+
+
+STRUCTS
+- Like what we've done in C, they're like the data fields of an object.
+- Pieces of a struct may have different types.
+- We use the struct keyword:
+  struct Person {
+    name: String,
+    age: i32,
+    height: i32.
+  }
+- Think of structs like templates (when we create structs we don't have to maintain order of declaration). Instantiate like this:
+let bishrut = Person {
+  age: 22,
+  height: 180,
+  name: String::from("Bishrut"),
+};
+- Access fields using dot notation. Can modify fields if we have defined a struct as mutable. Note that either all fields are mutable, or all fields are immutable in a struct.
+- Use struct as last expression in a function to return it.
+- Using init shorthand where method params have same name as struct fields:
+  build_person(name: String, age: i32, height: i32){
+    Person {
+      name,
+      age,
+      height,
+    }
+  }
+- Update syntax: say we want to create a new struct to represent bishrut's twin shoebee, we would do this:
+let shoebee = {
+  name: String::from("Shoebee")
+  .. bishrut
+}
+This assigns new values where needed and then copies the other fields from the first struct.
+
+- Tuple structs: Create uniquely named tuples that are considered their own type but where names for each field would be annoying.
+  struct Point(i32, i32, i32) count represent point in xyz plane.
+- Even if two tuple structs use same data types for values, they're considered different due to having different struct type names.
+
+- Using references instead of owned entities in structs requires explcitly provided lifetime parameters.
+
+- To print struct as we go, we can add a #[derive(Debug)] decorator so it can be used with a {:?} format in println!.
+
+- Can define METHODS on structs using impl keyword (implement)
+  - see example in chap5 project
+
+- Methods can take ownership of self, take an immutable or mutable ref
+  - Methods that take ownership are rare and are usually used when the method will transform self into something else entirely (so we don't want user to continue using self after the method is called).
+
+- No explicit referencing/dereferencing in methods as Rust takes care of it.
+
+- We can define ASSOCIATED FUNCTIONS on structs. These don't take a ref to self as a parameter, but are still tied to the struct. Many constructors are associated functions because they will return a new instance of the struct (like String::new()).
+  - Interesting: println! and print! implicitly transform any vars to be formatted into references of the passed object.
+
+- We can have multiple impl blocks for the same struct.
+
+
+ENUMERATIONS
+- Used where a particular data type has a fixed number of values and each value is mutually exclusive
+  - Ip address example:
+  enum IpAddrKind {
+    V4,
+    V6
+  }
+- Even tho ip addr can be one of two types, we fundamentally want to treat each as an ip address; thus, an enum is appropriate.
+- Define things from enums using association syntax (as variants of an enum are namespaced under their identifier)
+  let v4 = IpAddrKind::V4;
+  let v6 = IpAddrKind::V6;
+- since variants of an enum are of the same type, we could write a function that takes IpAddrKind and works for any of the different types.
+- An example of combining enum with struct:
+  enum IpAddrKind {
+    V4,
+    V6,
+  }
+  struct IpAddr {
+    kind: IpAddrKind,
+    address: String,
+  }
+  let home = IpAddr {
+    IpAddrKind::V4,
+    address: String::from("127.0.0.1"),
+  };
+
+- We can achieve the same effect as the struct+enum example by defining values on the enum variants as so:
+  enum IpAddrKind {
+    V4(String),
+    V6(String)
+  }
+  let home = IpAddrKind::V4(String::from("127.0.0.1"));
+
+- An advantage of enums is that each type can have different types and amounts of associated data:
+  enum IpAddrKind {
+    V4(u8, u8, u8, u8),
+    V6(String),
+  }
+  let home = IpAddrKind::V4(127, 0, 0, 1);
+
+- Enum types can even be structs or other enums
+- Just as we can impl methods for structs, we can do so for enums.
+- A common enum in Rust is Option<T> that has members Some(T) and None. This is Rust's alternative to having nulls.
+- Because of Option<T>'s existence, as long as something isn't an option, we can safely assume it isn't null. If something is an option, the compiler ensures that we handle all its possible states wherever we use it.
+
+- Match lets us control flow when working with enums.
+- We can bind to an enum's value by adding brackets:
+  fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+      ....
+        Coin::Quarter(state) => {
+          println!("Coin is from state {:?}", state);
+          25
+        }
+    }
+  }
+
+- We can use the matching pattern to work with Options:
+  let five: Option<i32> = Some(5);
+  let none: Option<i32> = None;
+
+  fn plus_one(x: Option<i32>) -> Option<i32> {
+    match x {
+      Some(i) => i + 1,
+      None => None
+    }
+
+    let six = plus_one(five); //we have six = Some(6);
+    let none2 = plus_one(none); // we have none2 = none
+  }
+
+- Matches have to be exhaustive, otherwise we get compiler error.
+- We can use the _ pattern in match to be a catch all for values we dont care about.
+  let some_val = 0u8;
+  match some_u8_val {
+    1 => println!("one"),
+    2 => println!("two"),
+    _ => () // We don't care if value isn't 1 or 2!
+  }
+
+- if let is useful for when we only want to match a single pattern.
+if let Some(x) = var {
+  // code goes here
+}
+
+
+Packages, Crates and Modules
+
+- When projects are large we want to organize code using modules.
+- A CRATE is either a binary or library.
+- A CRATE ROOT is a source file that the Rust compiler will start with; it is the starting point of our MODULE TREE (ROOT MODULE).
+- A PACKAGE is made up of one or more crates to provide functionality. A PACKAGE will contain a Cargo.toml file to describe how to build its crates.
+- A package has either 0 or 1 library crates and as many binaries as we want. However, it must have AT LEAST ONE crate (bin or lib)
+- Convention means that src/main.rs is the crate root of a binary crate and src/lib.rs is the crate root of a library. These special roots have the same name as the package.
+- A package can have multiple binary crates under src/bin. Each file represents a separate binary crate.
+- A crate groups similar functionality in a scope and makes namespacing more convenient.
+- We will develop examples of this organization in the restaurant package.
+
+- Modules are defined with mod. Inside a mod we can have other modules, functions, structs, anything really.
+
+- our crate root is called 'crate' and is at the root; then modules form a directory-like structure from there. Code is organized in a way that the names of modules lead programmers to where something is.
+
+- Parent, child, sibling modules.
+
+- We use modules by specifying ABSOLUTE or RELATIVE paths to where that module is in our module structure. We use :: to path.
+
+- Usually we should use absolute paths for less updating when code moves.
+
+- Modules are useful for privacy boundaries. Modules and everything contained in them are priv by default, we use PUB keyword to make public.
+- Children have access to parents, but parents dont automatically have child details.
+- Can have relative paths use 'super' that refers to parent.
+
+- Structs that are pub still have their members priv by default.
+- If even one of the struct's fields are priv we should have a constructor.
+
+- If we make an enum pub, all its variants are pub as not doing so wouldn't be practical.
+
+- Idiomatically, for functions we bring parent module into path so it's clear the scope we're calling function from.
+- For structs and enums, we bring the full path in (eg HashMap).
+
+- Can use as keyword to rename things to avoid name clashes in scope.
+
+- When using paths, we can use pub use so that that same import is available to code that now import our lib/module. Makes for clearer structuring and exposes simpler structure for modules.
+
+- Nest paths for multiple imports from same common path.
+
+- Can separate out modules into own folders/files with folders used to represent the module tree.
+
+
+COLLECTIONS
+- Provided by the std package, under collections. Stored in heap.
+
+- VECTOR: variable length list, store things of same type.
+  let v: Vec<i32> = Vec::new();
+  let v = vec![1, 2, 3]; // use vec macro, data type inferred i32.
+
+- ADDING TO VECTOR -- in this example all pushed values are i32 so don't need type annotation - but i prefer using for clarity.
+  let mut v: Vec<i32> =  Vec::new();
+  v.push(1);
+  v.push(2);
+- As with any variable, values of vec dropped when it goes out of scope.
+
+- ACCESSING VECTOR ELEMENTS -- either indexing or get:
+  let v = vec![1, 2, 3, 4, 5]
+  let third: &i32 = &v[2];
+
+  match v.get(2) {
+    Some(third) => // do stuff,
+    None => None
+  }
+
+- Remember that rules of referencing apply; we can't mutate a vector if we also hold an immutable ref in the same scope.
+
+- Can combine enums and vecs to effectively have vec of diff types.
+  enum SpreadSheetCol {
+    Int(i32),
+    Float(f64),
+    Text(String)
+  }
+
+  let row = vec![
+    SpreadSheetCol::Int(3),
+    SpreadSheetCol::Text(String::from("random")),
+    SpreadSheetCol::Float(23.5),
+  ];
+
+-- STRINGS: UTF-8 encoded
+- Can load from anything that implements Display trait
+  let data = "Some random text";
+  let s = data.to_string() // We get the owned String type
+  let s2 = "kajsf".to_string()
+
+- Can concatenate using +, but ownership of first string is lost, and second and proceeding strings must be refs.
+
+- Can use format macro: let s = format!("{} - {} - {}", s1,s2,s3);
+- Because strings are utf-8 encoded, we can't index into strings as each single character might have different encoding sizes in bytes.
+- String slices could be a method, but program will crash if we find invalid char boundaries; risky to use slices with ranges.
+
+Can iterate over unicode scalars (characters):
+  for c in "Hello".chars()
+
+Can iterate over each raw byte:
+  for c in "Hello".bytes()
+- Getting grapheme clusters from strings too complex for std, can find crates that do it.
+
+- HASHMAPS: same old, have to define same type for keys and then for vals.
+- Can create from a vector of tuples using collect.
+- Rules of ownership/copying apply to what we move into a hashmap.
+- Get value of a key using get method.
+- insert to add new key/value pair.
+- can use entry.or_insert() API to only add new value if not already exist.
+
+
+ERROR HANDLING
+- We can handle errors that can't be recovered from with panic!
+- Usually, a program clears stack before quitting on panic, we can instead choose to abort on panic to save size on release (see docs).
+
+- For manageable errors, like opening a file that may not exist, we could use the Result enum. To know that something implements Result, we could use API or compiler by giving bogus type annot.
+
+- Can nest result/matches for more sophisticated handling.
+
+- Although match is useful, it is verbose, we have alternatives.
+- Result::unwrap() returns value if Ok, panics if Err.
+- Result::expect() has same behavior as unwrap, but we can define panic message.
+
+- many times we can propogate errors up to calling code so that it can have more control on how to handle it.
