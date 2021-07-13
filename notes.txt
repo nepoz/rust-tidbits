@@ -325,4 +325,75 @@ ERROR HANDLING
 - Result::unwrap() returns value if Ok, panics if Err.
 - Result::expect() has same behavior as unwrap, but we can define panic message.
 
-- many times we can propogate errors up to calling code so that it can have more control on how to handle it.
+- many times we can propogate errors up to calling code so that it can have more control on how to handle it. Example in chap9.
+
+
+GENERIC TYPES, TRAITS, LIFETIMES
+- Further abstraction to avoid code duplication.
+- Usually use T to represent a generic type.
+  fn largest<T>(list: &[T]) -> {} -- largest is generic over a type T, takes in a slice of values of type T and will return a value of type T.
+- Can use generics for functions, enums, structs... same syntax
+  // A struct defined with two generics.
+  struct salary<T, U> {
+    Month: T,
+    Pay: U,
+  }
+
+- For methods, we can define specific or generic methods:
+  struct Point<T> {
+    x: T,
+    y: T,
+  }
+
+  // Generic method
+  impl<T> Point<T> {
+    fn x(&self) -> &T {
+      &self.x
+    }
+  }
+
+  // Specific method
+  impl Point<f32> {
+    fn get_distance(&self) -> f32 {//code in here}
+  }
+
+- Rust compiles generics to concrete types, so no runtime cost.
+
+- TRAITS are kind of like interfaces and define shared behavior for a group of generic items. An example trait:
+  pub trait Summary {
+    fn summarize(&self) -> String; // each type implementing Summary must define its own summarize behavior
+  }
+
+- Implementing Summary on a NewsArticle struct:
+  pub struct NewsArticle {
+    pub headline: String,
+    pub author: String,
+    pub content: String,
+  }
+
+  impl Summary for NewsArticle {
+    pub fn summarize(&self) -> String {
+      format!("{} by {}", headline, author)
+    }
+  }
+
+- Can only define traits on types LOCAL to our crate (ie, types we ourselves made; done for coherence and to avoid code breakage).
+
+- Can define default behavior for a type method that could be overwritten; can limit the number of methods that implementing code HAS to define.
+
+- Define that an argument must implement trait for a method:
+  pub fn foo(item: &impl Trait)// Concise way
+  pub fn<T: Trait> foo(item: &T) // if we have multiple args of same trait.
+
+- Combine trait bounds with +
+  pub fn foo(item: &impl Trait + AnotherTrait)
+  pub fn foo<T: Trait + AnotherTrait> (item: &T)
+
+- Can use where clause to clean up definitions
+  pub fn<T, U> foo(x: &T, y: &U) -> T
+    where T: Trait1 + Trait2
+          U: Trait3 + Trait 4
+  {}
+
+- Can specify a function will return something implementing Trait
+  pub fn foo<T>(x: &T) -> impl Trait {}
