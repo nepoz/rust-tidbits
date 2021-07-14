@@ -169,7 +169,7 @@ ENUMERATIONS
 - We can bind to an enum's value by adding brackets:
   fn value_in_cents(coin: Coin) -> u8 {
     match coin {
-      ....
+        // some omitted code up here
         Coin::Quarter(state) => {
           println!("Coin is from state {:?}", state);
           25
@@ -397,3 +397,20 @@ GENERIC TYPES, TRAITS, LIFETIMES
 
 - Can specify a function will return something implementing Trait
   pub fn foo<T>(x: &T) -> impl Trait {}
+
+
+- We can use generic lifetime parameters to make sure references live for as long as we need them to.
+
+- If Rust doesn't know for sure when a reference dies, we need a generic lifetime parameter: &'a i32 is a ref to i32 with param.
+
+- There is no way for us to allow dangling refs; we can't return a ref for a value created in a function, better to return owned type instead.
+
+- Generic lifetime annotation in angle brackets after name def.
+  fn some_fun<'a> (x: &'a i32) -> 'a res
+
+- Structs can work with refs too but every ref NEEDS a lifetime annotation.
+- Some patterns don't require annotations; compiler will warn us if we need them.
+
+- Need to declare lifetime param for methods implemented on a struct using them, using them in methods depends on if it's dealing with lifetime params.
+- 'static annotation means that the ref will live for as long as the program; could lead to dangling refs, always try to fix problem first.
+- Definitions of generic lifetimes and generic types can go in  same angle bracket as both are a part of the generics family.
