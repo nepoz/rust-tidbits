@@ -414,3 +414,27 @@ GENERIC TYPES, TRAITS, LIFETIMES
 - Need to declare lifetime param for methods implemented on a struct using them, using them in methods depends on if it's dealing with lifetime params.
 - 'static annotation means that the ref will live for as long as the program; could lead to dangling refs, always try to fix problem first.
 - Definitions of generic lifetimes and generic types can go in  same angle bracket as both are a part of the generics family.
+
+
+TESTS:
+- Annotate test functions with #[test]
+- Tests are run on own threads, a test fails when its thread panics.
+- assert! macro helps with testing, calls panic! if test fail.
+- test module follows rules of usual modules, need imports.
+- assert_eq! and assert_ne! are convenient macros for equality.
+- asser_eq! and assert_ne! also give us reasons for test failure.
+for assert_eq! to work, we need the args to impl Partial Eq and Debug.
+- Anything passed after arguemnts for an assert! family assertion is used to give meaningful message.
+- We can add #[should_panic] to tests to check errors that should panic.
+- Can pass module name as arg to cargo test to run only module tests.
+
+- Structuring wise, put tests in the same src file as the code that they test. Add a test module in that file and annotate with #[cfg(tests)]
+- Can also test private functions if we so wish
+- integration tests in root/tets dir. To have modules create modules in dirs like tests/common/mod.rs to have them ignored as test crates.
+
+
+- PROGRAM PROJECT
+  - refactor as you go
+  - abstract away logic to library; have small binary that can be verified for correctness by reading
+  - only let main handle config and error handling
+  - TDD: write a test that fails, know why it fails, then start writing/refactoring new code so test passes.
