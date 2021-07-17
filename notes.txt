@@ -438,3 +438,6 @@ for assert_eq! to work, we need the args to impl Partial Eq and Debug.
   - abstract away logic to library; have small binary that can be verified for correctness by reading
   - only let main handle config and error handling
   - TDD: write a test that fails, know why it fails, then start writing/refactoring new code so test passes.
+
+  - We want to print errors to stderr and not stdout; use eprintln!to write to stderr.
+  - std::env for interacting with program environment
